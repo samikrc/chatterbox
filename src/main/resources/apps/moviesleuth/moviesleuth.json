@@ -1,0 +1,76 @@
+{
+  "app": "MovieSleuth",
+  "version": "1.0",
+  "description": "Chatbot for finding movies from short summary",
+  "conditions": [
+    {
+      "name": "length-check",
+      "script": "if(x.length > 10)"
+    }
+  ],
+  "models": [
+    {
+      "name": "moviesleuth-recog-model",
+      "description": "Model for MovieSleuth",
+      "location": "local-model"   // local-model or hosted-model, in which case, URL will be required
+    },
+    {
+      "name": "generic-entity-model",
+      "description": "Entity model for recognizing people and places.",
+      "location": "hosted-model",
+      "url": ""
+    },
+    {
+      "name": "generic-offensive-detection-model",
+      "description": "Entity model for recognizing offensive language."
+    }
+  ],
+  "nodes":
+  [
+    {
+      "name": "provided-summary",
+      "models": ["moviesleuth-intent-model", "generic-entity-model", "generic-offensive-detection-model"],
+      "entities": ["location", "people"]
+    },
+    {
+      "name": "other-short-desc",
+      "responseList": [
+        "Please provide a brief summary of the movie plot - as much as you remember.",
+        "Hmm .. that doesn't look like a movie summary. Can't you say more?",
+        "Wow - that's real short. A few more sentences would be so much better.",
+        "Those few words would match to so many stories that I am lost. Can you tell me some more?",
+        "That's all you remember about the movie? Think just a bit harder, maybe?"
+      ]
+    },
+    {
+      "name": "other-offensive",
+      "responseList": [
+        "That's strong ... I am offended :-(",
+        "Let's talk something nice, no?",
+        "I'm impressionable - can you be nice?",
+        "Wow ... that's uncool. Gentle, please.",
+        "Ouch - that felt bad :-( Let's try again.",
+        "I'm afraid I wasn't expecting this :-("
+      ]
+    },
+    {
+      "name": "other-offensive-repeat",
+       "responseList": [
+        "Sorry - can we continue later?",
+        "I am lost - let me gather myself. Brb ...",
+        "Can't go on - bye for now.",
+        "Shall we talk later? Having a headache ..."
+      ]
+    }
+  ],
+  "app-flows": {
+    "begin": {},
+    "any": {
+      "execute": ["condition/length-check"],
+      "if-positive": {
+        "execute": ["model/generic-entity-model"]
+      },
+      "if-negative": "other-short-desc"
+   }
+  }
+}
