@@ -32,7 +32,7 @@ object ChatterboxServer extends App
     /**
       * Define helper directive for converting the map of form fields to an WebInput object
       */
-    private val messageFromFormFields: Directive1[Message] = formFieldMap.map(fields => new Message(fields))
+    private val messageFromFormFields: Directive1[ChatMessage] = formFieldMap.map(fields => new ChatMessage(fields))
 
     private final val appSvcMgrInstanceCount: Int = 10
 
@@ -42,14 +42,14 @@ object ChatterboxServer extends App
     val route =
         path("messages")
         {
-            (post & messageFromFormFields) { message: Message =>
+            (post & messageFromFormFields) { message: ChatMessage =>
                 // Get or create an ActorRef for the appId of the message
                 val msgProcessor = if(appServiceManagers.contains(message.appId))
                     appServiceManagers.get(message.appId).asInstanceOf[ActorRef]
                 else
                 {
                     // Get the corresponding app file from Resources
-                    val appFileContent = Source.fromInputStream(this.getClass.getResourceAsStream(s"/apps/${message.appId}.json")).getLines().mkString
+                    val appFileContent = Source.fromInputStream(this.getClass.getResourceAsStream(s"/apps/${message.appId}/${message.appId}.json")).getLines().mkString
                     // Start an AppServiceManager with specific count of threads.
                     val processor = system.actorOf(Props(
                         new AppServiceManager(Json.parse(appFileContent))).withRouter(RoundRobinPool(appSvcMgrInstanceCount)), name = message.appId)

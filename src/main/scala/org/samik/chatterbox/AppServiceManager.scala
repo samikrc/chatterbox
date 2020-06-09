@@ -4,31 +4,25 @@ import akka.actor.{Actor, ActorLogging}
 import org.samik.chatterbox.utils._
 import org.samik.chatterbox.utils.Implicits._
 
-class AppServiceManager(appConfig: Json.Value) extends Actor with ActorLogging
+abstract class AppServiceManager(appConfig: Json.Value) extends Actor with ActorLogging
 {
     // Get the conversation nodes from the JSON config file
-    protected val nodes = appConfig("nodes").asArray.map(v =>
-    {
-        val map = v.asMap
-        Node(map.get("name").get.asString, map.get("models").map(_.asStringArray), map.get("models").map(_.asStringArray), map.get("models").map(_.asStringArray))
-    })
     protected val models = appConfig("models").asArray.map(v => {
         val map = v.asMap
         Model(map.get("name").get.asString, map.get("description").map(_.asString), map.get("location").get.asString, map.get("url").map(_.asString))
     })
     protected val conditions = appConfig("conditions").asArray.map(v => Condition(v.asMap("name").asString, v.asMap("script").asString))
-
-
-    override def receive: Receive =
+    protected val nodes = appConfig("nodes").asArray.map(v =>
     {
-        case message: Message =>
-        {
-
-        }
-    }
+        val map = v.asMap
+        Node(map.get("name").get.asString,
+            map.get("models").map(_.asStringArray).map(v => v.map(modelName => models.find(m => m.name == modelName).get)),
+            map.get("entities").map(_.asStringArray),
+            map.get("responseList").map(_.asStringArray))
+    })
 }
 
-case class Node(name: String, models: Option[Array[String]], entities: Option[Array[String]], responseList: Option[Array[String]])
+case class Node(name: String, models: Option[Array[Model]], entities: Option[Array[String]], responseList: Option[Array[String]])
 case class Model(name: String, description: Option[String], location: String, url: Option[String])
 case class Condition(name: String, script: String)
 /*
